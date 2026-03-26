@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import SplashScreen from './components/SplashScreen';
 import Sidebar from './components/Sidebar';
-import { getTickets } from './api/ticketService';
+import { getTickets, getTicketById } from './api/ticketService';
 import { ChevronRight, ChevronLeft, Search } from 'lucide-react';
 import PaymentSummary from './components/PaymentSummary';
+import TicketDetailModal from './components/TicketDetailModal';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -11,6 +12,9 @@ function App() {
   const [tickets, setTickets] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (!showSplash && activeTab === 'tickets') {
@@ -18,17 +22,46 @@ function App() {
     }
   }, [showSplash, page, activeTab]);
 
+  //Load of ticket data for search
   const loadTickets = async () => {
     setLoading(true);
     try {
-      const response = await getTickets(page);
-      setTickets(response.data.data);
+
+      const response = await getTickets(1, 1000);
+      setTickets(response.data.data || []);
     } catch (error) {
       console.error("Error al conectar con el backend:", error);
+      setTickets([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleVerDetalles = async (ticketId) => {
+    setLoading(true);
+    try {
+      console.log("Solicitando detalles para ID:", ticketId);
+      const response = await getTicketById(ticketId);
+
+      setSelectedTicket(response.data);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error al obtener el detalle:", error);
+      alert("No se pudo cargar la información.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logic for search 
+  const filteredTickets = tickets.filter((ticket) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      ticket.code?.toLowerCase().includes(term) ||
+      ticket.supplier?.name?.toLowerCase().includes(term) ||
+      ticket.land?.name?.toLowerCase().includes(term)
+    );
+  });
 
   if (showSplash) return <SplashScreen onFinished={() => setShowSplash(false)} />;
 
@@ -37,7 +70,6 @@ function App() {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="flex-1 ml-64 p-8">
-
         {/* Header */}
         <header className="flex justify-between items-center mb-10">
           <div>
@@ -51,7 +83,9 @@ function App() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Buscar ticket..."
+                placeholder="Buscar por código o proveedor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all w-64"
               />
             </div>
@@ -61,11 +95,9 @@ function App() {
           </div>
         </header>
 
-        {/* Conditional render for content */}
         {activeTab === 'tickets' ? (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[calc(100vh-220px)]">
 
-            {/* Container scrollable for table*/}
             <div className="flex-1 overflow-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 z-10 bg-slate-50">
@@ -79,18 +111,31 @@ function App() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 italic">Cargando datos...</td></tr>
+                    <tr>
+                      <td colSpan="5" className="p-20 text-center text-slate-400 italic">
+                        Cargando datos...
+                      </td>
+                    </tr>
+                  ) : filteredTickets.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-20 text-center text-slate-400">
+                        {searchTerm ? `No hay resultados para "${searchTerm}"` : "No hay registros disponibles."}
+                      </td>
+                    </tr>
                   ) : (
-                    tickets.map((ticket) => (
+                    filteredTickets.map((ticket) => (
                       <tr key={ticket.id} className="hover:bg-blue-50/30 transition-colors group">
                         <td className="p-5 font-bold text-blue-600">#{ticket.code}</td>
                         <td className="p-5 font-medium text-slate-700">{ticket.supplier?.name}</td>
                         <td className="p-5 text-slate-500">{ticket.land?.name}</td>
                         <td className="p-5 text-right font-black text-slate-900">
-                          ${ticket.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          ${ticket.total?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="p-5 text-center">
-                          <button className="text-slate-400 hover:text-blue-600 font-semibold text-sm transition-colors px-4 py-2 rounded-lg hover:bg-blue-50">
+                          <button
+                            onClick={() => handleVerDetalles(ticket.id)}
+                            className="text-slate-400 hover:text-blue-600 font-semibold text-sm transition-colors px-4 py-2 rounded-lg hover:bg-blue-50"
+                          >
                             Detalles
                           </button>
                         </td>
@@ -101,10 +146,11 @@ function App() {
               </table>
             </div>
 
+            {/* Pagination */}
             <div className="p-4 flex justify-between items-center bg-slate-50 border-t mt-auto">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
+                disabled={page === 1 || loading}
                 className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl disabled:opacity-50 hover:bg-slate-100 transition shadow-sm"
               >
                 <ChevronLeft size={18} /> Anterior
@@ -114,7 +160,7 @@ function App() {
               </span>
               <button
                 onClick={() => setPage(p => p + 1)}
-                disabled={tickets.length < 10}
+                disabled={tickets.length < 10 || loading}
                 className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl disabled:opacity-50 hover:bg-slate-100 transition shadow-sm"
               >
                 Siguiente <ChevronRight size={18} />
@@ -123,6 +169,13 @@ function App() {
           </div>
         ) : (
           <PaymentSummary />
+        )}
+
+        {isModalOpen && (
+          <TicketDetailModal
+            ticket={selectedTicket}
+            onClose={() => setIsModalOpen(false)}
+          />
         )}
       </main>
     </div>
