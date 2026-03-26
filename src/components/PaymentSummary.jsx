@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { getWeeklySummary } from '../api/ticketService';
-import { 
-  Calendar, 
-  Receipt, 
-  Loader2, 
-  DollarSign, 
-  Users, 
-  BarChart3, 
-  Package, 
-  TrendingUp 
+import {
+  Calendar,
+  Receipt,
+  Loader2,
+  DollarSign,
+  Users,
+  BarChart3,
+  Package,
+  Info
 } from 'lucide-react';
 
 const PaymentSummary = () => {
   const [summary, setSummary] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [week, setWeek] = useState(8); 
+  const [week, setWeek] = useState(8);
   const [year, setYear] = useState(2023);
 
   // Global calculations
@@ -46,27 +46,32 @@ const PaymentSummary = () => {
     }
   };
 
+  const handleOpenAnalysis = (item) => {
+    setSelectedAnalysis(item);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-      
+
       {/* Filter section */}
       <div className="flex items-center gap-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-3 text-slate-500 font-medium">
           <Calendar size={20} className="text-blue-600" />
           <div className="flex items-center gap-2">
             <span>Semana:</span>
-            <input 
-              type="number" 
+            <input
+              type="number"
               min="1"
               max="53"
-              value={week} 
+              value={week}
               onChange={(e) => setWeek(e.target.value)}
               className="w-16 bg-slate-50 border border-slate-200 rounded-lg text-center font-bold text-blue-600 outline-none p-1 focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex items-center gap-2 ml-4">
             <span>Año:</span>
-            <input 
+            <input
               type="number"
               value={year}
               onChange={(e) => setYear(e.target.value)}
@@ -135,8 +140,8 @@ const PaymentSummary = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {summary.length > 0 ? (
             summary.map((item, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md transition-all hover:-translate-y-1 group"
               >
                 <div className="flex justify-between items-start mb-4">
@@ -164,14 +169,8 @@ const PaymentSummary = () => {
                       ${Number(item.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
-                  
-                  <button 
-                    onClick={() => console.log("Abriendo analítica de:", item.supplier?.name)}
-                    className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border-none cursor-pointer"
-                    title="Ver detalles analíticos"
-                  >
-                    <TrendingUp size={18} />
-                  </button>
+
+
                 </div>
               </div>
             ))
@@ -185,7 +184,10 @@ const PaymentSummary = () => {
           )}
         </div>
       )}
+
     </div>
+
+
   );
 };
 
