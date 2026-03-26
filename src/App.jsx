@@ -16,17 +16,22 @@ function App() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Pagination config for table display
+  const itemsPerPage = 10;
+
   useEffect(() => {
     if (!showSplash && activeTab === 'tickets') {
       loadTickets();
     }
-  }, [showSplash, page, activeTab]);
+  }, [showSplash, activeTab]);
 
-  //Load of ticket data for search
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
   const loadTickets = async () => {
     setLoading(true);
     try {
-
       const response = await getTickets(1, 1000);
       setTickets(response.data.data || []);
     } catch (error) {
@@ -40,9 +45,7 @@ function App() {
   const handleVerDetalles = async (ticketId) => {
     setLoading(true);
     try {
-      console.log("Solicitando detalles para ID:", ticketId);
       const response = await getTicketById(ticketId);
-
       setSelectedTicket(response.data);
       setIsModalOpen(true);
     } catch (error) {
@@ -53,7 +56,7 @@ function App() {
     }
   };
 
-  // Logic for search 
+  // Logical filter
   const filteredTickets = tickets.filter((ticket) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -63,32 +66,31 @@ function App() {
     );
   });
 
+  const indexOfLastItem = page * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTickets = filteredTickets.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
+
   if (showSplash) return <SplashScreen onFinished={() => setShowSplash(false)} />;
 
-  // Suma de todos los tickets cargados en memoria
   const totalGlobal = tickets.reduce((acc, t) => acc + (parseFloat(t.total) || 0), 0);
-
-  console.log("DEBUG - Total de todos los tickets:", totalGlobal);
-  console.log("DEBUG - Cantidad de tickets:", tickets.length);
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="flex-1 ml-64 p-8">
-        {/* Header */}
         <header className="flex justify-between items-start mb-10">
           <div>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight">
               {activeTab === 'tickets' ? 'Listado de Tickets' : 'Resumen de Pagos'}
             </h2>
 
-            {/* Visual Stats Indicators */}
             <div className="flex items-center gap-4 mt-3">
               <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
                 <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                 <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  {tickets.length} Tickets
+                  {filteredTickets.length} Encontrados
                 </span>
               </div>
 
@@ -98,33 +100,31 @@ function App() {
                   Total: ${totalGlobal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
               </div>
-
-              <p className="text-slate-400 text-xs font-medium ml-2">
-                Sincronizado hace un momento
-              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input
-                type="text"
-                placeholder="Buscar código, proveedor o ubicación..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all w-76 shadow-sm placeholder:text-slate-400 text-sm"
-              />
+
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Buscar código, proveedor o ubicación..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all w-76 shadow-sm placeholder:text-slate-400 text-sm"
+                />
+              </div>
+              <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-lg shadow-slate-200 flex items-center gap-2 text-sm">
+                <span>+</span> Nuevo Ticket
+              </button>
             </div>
-            <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-lg shadow-slate-200 flex items-center gap-2 text-sm">
-              <span>+</span> Nuevo Ticket
-            </button>
           </div>
         </header>
 
         {activeTab === 'tickets' ? (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[calc(100vh-220px)]">
-
             <div className="flex-1 overflow-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 z-10 bg-slate-50">
@@ -138,19 +138,11 @@ function App() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr>
-                      <td colSpan="5" className="p-20 text-center text-slate-400 italic">
-                        Cargando datos...
-                      </td>
-                    </tr>
-                  ) : filteredTickets.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="p-20 text-center text-slate-400">
-                        {searchTerm ? `No hay resultados para "${searchTerm}"` : "No hay registros disponibles."}
-                      </td>
-                    </tr>
+                    <tr><td colSpan="5" className="p-20 text-center text-slate-400 italic">Cargando...</td></tr>
+                  ) : currentTickets.length === 0 ? (
+                    <tr><td colSpan="5" className="p-20 text-center text-slate-400">No se encontraron resultados.</td></tr>
                   ) : (
-                    filteredTickets.map((ticket) => (
+                    currentTickets.map((ticket) => (
                       <tr key={ticket.id} className="hover:bg-blue-50/30 transition-colors group">
                         <td className="p-5 font-bold text-blue-600">#{ticket.code}</td>
                         <td className="p-5 font-medium text-slate-700">{ticket.supplier?.name}</td>
@@ -173,22 +165,28 @@ function App() {
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="p-4 flex justify-between items-center bg-slate-50 border-t mt-auto">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1 || loading}
-                className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl disabled:opacity-50 hover:bg-slate-100 transition shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl disabled:opacity-50 hover:bg-slate-100 transition shadow-sm font-medium text-slate-600"
               >
                 <ChevronLeft size={18} /> Anterior
               </button>
-              <span className="text-sm font-medium text-slate-600 bg-white px-4 py-2 rounded-full border">
-                Página <span className="text-blue-600 font-bold">{page}</span>
-              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-500">
+                  Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredTickets.length)} de {filteredTickets.length}
+                </span>
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md font-bold">
+                  Pág. {page} / {totalPages || 1}
+                </span>
+              </div>
+
               <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={tickets.length < 10 || loading}
-                className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl disabled:opacity-50 hover:bg-slate-100 transition shadow-sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || loading}
+                className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl disabled:opacity-50 hover:bg-slate-100 transition shadow-sm font-medium text-slate-600"
               >
                 Siguiente <ChevronRight size={18} />
               </button>
@@ -205,7 +203,7 @@ function App() {
           />
         )}
       </main>
-    </div >
+    </div>
   );
 }
 
