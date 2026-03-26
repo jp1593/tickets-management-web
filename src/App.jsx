@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SplashScreen from './components/SplashScreen';
 import Sidebar from './components/Sidebar';
 import { getTickets, getTicketById } from './api/ticketService';
-import { ChevronRight, ChevronLeft, Search } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Search, Receipt } from 'lucide-react';
 import PaymentSummary from './components/PaymentSummary';
 import TicketDetailModal from './components/TicketDetailModal';
 
@@ -65,32 +65,59 @@ function App() {
 
   if (showSplash) return <SplashScreen onFinished={() => setShowSplash(false)} />;
 
+  // Suma de todos los tickets cargados en memoria
+  const totalGlobal = tickets.reduce((acc, t) => acc + (parseFloat(t.total) || 0), 0);
+
+  console.log("DEBUG - Total de todos los tickets:", totalGlobal);
+  console.log("DEBUG - Cantidad de tickets:", tickets.length);
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="flex-1 ml-64 p-8">
         {/* Header */}
-        <header className="flex justify-between items-center mb-10">
+        <header className="flex justify-between items-start mb-10">
           <div>
-            <h2 className="text-3xl font-black text-slate-900">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
               {activeTab === 'tickets' ? 'Listado de Tickets' : 'Resumen de Pagos'}
             </h2>
-            <p className="text-slate-500">Gestión de datos en tiempo real.</p>
+
+            {/* Visual Stats Indicators */}
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
+                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                  {tickets.length} Tickets
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full shadow-sm">
+                <Receipt size={14} className="text-emerald-600" />
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                  Total: ${totalGlobal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              <p className="text-slate-400 text-xs font-medium ml-2">
+                Sincronizado hace un momento
+              </p>
+            </div>
           </div>
+
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Buscar por código o proveedor..."
+                placeholder="Buscar código, proveedor o ubicación..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all w-64"
+                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all w-76 shadow-sm placeholder:text-slate-400 text-sm"
               />
             </div>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-200">
-              + Nuevo Ticket
+            <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-lg shadow-slate-200 flex items-center gap-2 text-sm">
+              <span>+</span> Nuevo Ticket
             </button>
           </div>
         </header>
@@ -178,7 +205,7 @@ function App() {
           />
         )}
       </main>
-    </div>
+    </div >
   );
 }
 
