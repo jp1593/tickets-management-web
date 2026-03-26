@@ -5,18 +5,19 @@ import { getTickets, getTicketById } from './api/ticketService';
 import { ChevronRight, ChevronLeft, Search, Receipt } from 'lucide-react';
 import PaymentSummary from './components/PaymentSummary';
 import TicketDetailModal from './components/TicketDetailModal';
+import DashboardMetrics from './components/DashboardMetrics';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const [activeTab, setActiveTab] = useState('tickets');
+  const [activeTab, setActiveTab] = useState('tickets'); //Variable established to set teh first section to load
   const [tickets, setTickets] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
-  // Pagination config for table display
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -35,7 +36,7 @@ function App() {
       const response = await getTickets(1, 1000);
       setTickets(response.data.data || []);
     } catch (error) {
-      console.error("Error al conectar con el backend:", error);
+      console.error("Error:", error);
       setTickets([]);
     } finally {
       setLoading(false);
@@ -49,14 +50,12 @@ function App() {
       setSelectedTicket(response.data);
       setIsModalOpen(true);
     } catch (error) {
-      console.error("Error al obtener el detalle:", error);
-      alert("No se pudo cargar la información.");
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Logical filter
   const filteredTickets = tickets.filter((ticket) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -75,55 +74,14 @@ function App() {
 
   const totalGlobal = tickets.reduce((acc, t) => acc + (parseFloat(t.total) || 0), 0);
 
-  return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-      <main className="flex-1 ml-64 p-8">
-        <header className="flex justify-between items-start mb-10">
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-              {activeTab === 'tickets' ? 'Listado de Tickets' : 'Resumen de Pagos'}
-            </h2>
-
-            <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  {filteredTickets.length} Encontrados
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full shadow-sm">
-                <Receipt size={14} className="text-emerald-600" />
-                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-                  Total: ${totalGlobal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Buscar código, proveedor o ubicación..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all w-76 shadow-sm placeholder:text-slate-400 text-sm"
-                />
-              </div>
-              <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-2xl font-bold transition-all shadow-lg shadow-slate-200 flex items-center gap-2 text-sm">
-                <span>+</span> Nuevo Ticket
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {activeTab === 'tickets' ? (
+  // Function to render content by page/section
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardMetrics year={2023} week={4} />; 
+      
+      case 'tickets':
+        return (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[calc(100vh-220px)]">
             <div className="flex-1 overflow-auto">
               <table className="w-full text-left border-collapse">
@@ -192,9 +150,67 @@ function App() {
               </button>
             </div>
           </div>
-        ) : (
-          <PaymentSummary />
-        )}
+        );
+
+      case 'payments':
+        return <PaymentSummary />;
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      <main className="flex-1 ml-64 p-8">
+        <header className="flex justify-between items-start mb-10">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              {activeTab === 'tickets' ? 'Listado de Tickets' : 
+               activeTab === 'dashboard' ? 'Panel de Control' : 'Resumen de Pagos'}
+            </h2>
+
+            {activeTab === 'tickets' && (
+              <div className="flex items-center gap-4 mt-3">
+                <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    {filteredTickets.length} Encontrados
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full shadow-sm">
+                  <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                    Total: ${totalGlobal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {activeTab === 'tickets' && (
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Buscar código, proveedor o ubicación..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none w-76 text-sm"
+                />
+              </div>
+              <button className="bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold text-sm">
+                + Nuevo Ticket
+              </button>
+            </div>
+          )}
+        </header>
+
+        {/* Dinamic render */}
+        {renderTabContent()}
 
         {isModalOpen && (
           <TicketDetailModal
