@@ -16,3 +16,7 @@ export const getWeeklySummary = (year, week) =>
 
 export const createTicket = (data) => 
   api.post('/tickets', data);
+
+export const getDashboardStats = (year, week) => {
+  return api.get(`/payments/dashboard-stats`, { params: { year, week } });
+};
