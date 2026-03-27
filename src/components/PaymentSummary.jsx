@@ -10,8 +10,10 @@ import {
   Package,
   Info,
   X,
-  MapPin
+  FileDown
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const PaymentSummary = () => {
   const [summary, setSummary] = useState([]);
@@ -55,9 +57,97 @@ const PaymentSummary = () => {
     }
   };
 
-  const handleOpenAnalysis = (item) => {
-    setSelectedAnalysis(item);
-    setIsModalOpen(true);
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let currentY = 20; // Initial position of page
+
+      summary.forEach((item, index) => {
+        if (currentY > pageHeight - 60) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        // Header
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14); 
+        doc.setTextColor(30, 41, 59);
+        doc.text(item.supplier?.name || "Proveedor", 14, currentY);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(`Código: ${item.supplier?.code || 'S/C'} | Semana: ${week}`, 14, currentY + 6);
+
+        doc.setDrawColor(59, 130, 246);
+        doc.setLineWidth(0.3);
+        doc.line(14, currentY + 8, 50, currentY + 8);
+
+        // Data mapping
+        const tableData = [];
+        item.tickets?.forEach(ticket => {
+          ticket.items?.forEach(prod => {
+            tableData.push([
+              `#${ticket.code}`,
+              ticket.land?.name || 'N/A',
+              prod.product?.name || 'Sin nombre',
+              prod.quantity,
+              `$${Number(prod.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+            ]);
+          });
+        });
+
+        // Table
+        autoTable(doc, {
+          startY: currentY + 12,
+          head: [['Ticket', 'Destino', 'Producto', 'Cant.', 'Subtotal']],
+          body: tableData,
+          theme: 'striped',
+          headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255] },
+          styles: { fontSize: 8, font: 'helvetica' },
+          margin: { left: 14, right: 14 },
+          rowPageBreak: 'avoid'
+        });
+
+        const tableFinalY = doc.lastAutoTable.finalY;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(0);
+        doc.text(`Total ${item.supplier?.name}:`, 14, tableFinalY + 7);
+
+        const totalFormatted = `$${Number(item.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        doc.text(totalFormatted, pageWidth - 14, tableFinalY + 7, { align: 'right' });
+
+        currentY = tableFinalY + 20;
+      });
+
+      // Footer - Date of creation
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Reporte Semanal de Pagos - Generado el ${new Date().toLocaleDateString()}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+
+      doc.save(`Reporte_Consolidado_S${week}_${year}.pdf`);
+
+    } catch (err) {
+      console.error("Error detallado generando PDF:", err);
+      alert("Error al generar el PDF. Revisa la consola.");
+    }
   };
 
   return (
@@ -87,7 +177,18 @@ const PaymentSummary = () => {
               className="w-24 bg-slate-50 border border-slate-200 rounded-lg text-center font-bold text-slate-700 outline-none p-1 focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
         </div>
+        {/* Botón de descarga alineado a la derecha */}
+        {!loading && summary.length > 0 && (
+          <button
+            onClick={generatePDF}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 shadow-md shadow-blue-100 group"
+          >
+            <FileDown size={18} className="group-hover:animate-bounce" />
+            <span>Descargar PDF</span>
+          </button>
+        )}
       </div>
 
       {/* Cards of content */}
@@ -198,7 +299,7 @@ const PaymentSummary = () => {
           )}
 
           {/* Supplier detail Modal */}
-           {isModalOpen && selectedSupplier && (
+          {isModalOpen && selectedSupplier && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div
                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
