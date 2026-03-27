@@ -19,6 +19,11 @@ export const getWeeklySummary = (year, week) =>
 // Create Ticket
 export const createTicket = (data) => api.post("/tickets", data);
 
+// Erase Ticket
+export const deleteTicket = (id) => {
+  return api.delete(`/tickets/${id}`);
+};
+
 // Get Data For Dashboard
 export const getDashboardStats = (year, week) => {
   return api.get(`/payments/dashboard-stats`, { params: { year, week } });
