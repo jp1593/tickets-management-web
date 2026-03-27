@@ -6,6 +6,7 @@ import { ChevronRight, ChevronLeft, Search, Receipt } from 'lucide-react';
 import PaymentSummary from './components/PaymentSummary';
 import TicketDetailModal from './components/TicketDetailModal';
 import DashboardMetrics from './components/DashboardMetrics';
+import CreateTicketModal from './components/CreateTicketModal';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -16,7 +17,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
 
   const itemsPerPage = 10;
 
@@ -78,8 +80,8 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardMetrics year={2023} week={4} />; 
-      
+        return <DashboardMetrics year={2023} week={4} />;
+
       case 'tickets':
         return (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[calc(100vh-220px)]">
@@ -168,8 +170,8 @@ function App() {
         <header className="flex justify-between items-start mb-10">
           <div>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-              {activeTab === 'tickets' ? 'Listado de Tickets' : 
-               activeTab === 'dashboard' ? 'Panel de Control' : 'Resumen de Pagos'}
+              {activeTab === 'tickets' ? 'Listado de Tickets' :
+                activeTab === 'dashboard' ? 'Panel de Control' : 'Resumen de Pagos'}
             </h2>
 
             {activeTab === 'tickets' && (
@@ -202,7 +204,7 @@ function App() {
                   className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none w-76 text-sm"
                 />
               </div>
-              <button className="bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold text-sm">
+              <button onClick={() => setIsCreateModalOpen(true)} className="bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold text-sm">
                 + Nuevo Ticket
               </button>
             </div>
@@ -216,6 +218,13 @@ function App() {
           <TicketDetailModal
             ticket={selectedTicket}
             onClose={() => setIsModalOpen(false)}
+          />
+        )}
+
+        {isCreateModalOpen && (
+          <CreateTicketModal
+            onClose={() => setIsCreateModalOpen(false)}
+            onSuccess={loadTickets}
           />
         )}
       </main>
