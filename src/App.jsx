@@ -7,6 +7,7 @@ import PaymentSummary from './components/PaymentSummary';
 import TicketDetailModal from './components/TicketDetailModal';
 import DashboardMetrics from './components/DashboardMetrics';
 import CreateTicketModal from './components/CreateTicketModal';
+import { deleteTicket } from './api/ticketService';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -162,6 +163,24 @@ function App() {
     }
   };
 
+  const handleDeleteTicket = async (id) => {
+    console.log("🟡 Deleting ticket with id:", id);
+    try {
+      const res = await deleteTicket(id);
+
+      console.log("🟢 DELETE response:", res.data);
+
+      // List refresh
+      await loadTickets();
+
+      setIsModalOpen(false);
+
+    } catch (error) {
+      console.error("🔴 DELETE error:", error.response?.data || error.message);
+      alert("Error eliminando ticket");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -218,6 +237,7 @@ function App() {
           <TicketDetailModal
             ticket={selectedTicket}
             onClose={() => setIsModalOpen(false)}
+            onDelete={handleDeleteTicket}
           />
         )}
 

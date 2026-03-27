@@ -1,8 +1,23 @@
 import React from 'react';
-import { X, Package, Calendar, User, MapPin, Receipt } from 'lucide-react';
+import { X, Package, User, MapPin, Receipt, Trash2 } from 'lucide-react';
 
-const TicketDetailModal = ({ ticket, onClose }) => {
+const TicketDetailModal = ({ ticket, onClose, onDelete }) => {
     if (!ticket) return null;
+
+    const [confirming, setConfirming] = React.useState(false);
+    const [loading, setLoading] = React.useState(false);
+
+    const handleDelete = async () => {
+        console.log("🟡 Modal sending delete for:", ticket.id);
+        setLoading(true);
+        try {
+            await onDelete(ticket.id);
+        } catch (e) {
+            console.error("🔴 Modal delete error:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -13,9 +28,50 @@ const TicketDetailModal = ({ ticket, onClose }) => {
                         <h2 className="text-2xl font-black text-slate-800">Ticket #{ticket.code}</h2>
                         <p className="text-slate-500 text-sm font-medium">Detalle completo de la transacción</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-                        <X size={24} className="text-slate-600" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Delete Ticket*/}
+                        {!confirming ? (
+                            <button
+                                onClick={() => setConfirming(true)}
+                                className="p-2 hover:bg-red-100 rounded-full transition"
+                                title="Eliminar ticket"
+                            >
+                                <Trash2 size={20} className="text-red-500" />
+                            </button>
+                        ) : (
+                            <div className="flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-xl">
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-semibold text-red-600">
+                                        ¿Eliminar este ticket?
+                                    </span>
+                                    <span className="text-[10px] text-red-500">
+                                        Esta acción no se puede deshacer
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setConfirming(false)}
+                                    className="text-xs px-2 py-1 rounded bg-white border"
+                                >
+                                    No
+                                </button>
+
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={loading}
+                                    className="text-xs px-2 py-1 rounded bg-red-600 text-white font-bold disabled:opacity-50"
+                                >
+                                    {loading ? "..." : "Sí"}
+                                </button>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                        >
+                            <X size={24} className="text-slate-600" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
