@@ -8,7 +8,9 @@ import {
   Users,
   BarChart3,
   Package,
-  Info
+  Info,
+  X,
+  MapPin
 } from 'lucide-react';
 
 const PaymentSummary = () => {
@@ -16,6 +18,13 @@ const PaymentSummary = () => {
   const [loading, setLoading] = useState(false);
   const [week, setWeek] = useState(8);
   const [year, setYear] = useState(2023);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenDetails = (item) => {
+    setSelectedSupplier(item);
+    setIsModalOpen(true);
+  };
 
   // Global calculations
   const globalTotal = summary.reduce((acc, item) => acc + Number(item.totalAmount || 0), 0);
@@ -169,8 +178,13 @@ const PaymentSummary = () => {
                       ${Number(item.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
-
-
+                  <button
+                    onClick={() => handleOpenDetails(item)}
+                    className="bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white p-3 rounded-2xl transition-all duration-300 group/btn shadow-sm hover:shadow-blue-200"
+                    title="Ver detalles"
+                  >
+                    <Info size={20} className="group-hover/btn:scale-110 transition-transform" />
+                  </button>
                 </div>
               </div>
             ))
@@ -182,12 +196,111 @@ const PaymentSummary = () => {
               </p>
             </div>
           )}
+
+          {/* Supplier detail Modal */}
+           {isModalOpen && selectedSupplier && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={() => setIsModalOpen(false)}
+              />
+
+              <div className="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+
+                {/* Header */}
+                <div className="p-8 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                  <div>
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-100 px-3 py-1 rounded-full">
+                      {selectedSupplier.supplier?.code}
+                    </span>
+                    <h2 className="text-2xl font-black text-slate-800 mt-2">
+                      {selectedSupplier.supplier?.name}
+                    </h2>
+                    <p className="text-slate-500 text-sm font-medium">Resumen detallado de la semana</p>
+                  </div>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+                  >
+                    <X size={24} className="text-slate-600" />
+                  </button>
+                </div>
+
+                <div className="p-8 overflow-y-auto space-y-8">
+
+                  {/* Products table */}
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                      <Package size={18} className="text-blue-500" /> Productos Comprados
+                    </h3>
+
+                    <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-slate-500">
+                          <tr>
+                            <th className="px-4 py-3 font-bold">Ticket</th>
+                            <th className="px-4 py-3 font-bold">Producto</th>
+                            <th className="px-4 py-3 font-bold text-center">Cant.</th>
+                            <th className="px-4 py-3 font-bold text-right">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {selectedSupplier.tickets?.flatMap(ticket =>
+                            (ticket.items || []).map((item, idx) => (
+                              <tr key={`${ticket.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-4 py-3">
+                                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                                    #{ticket.code}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 font-medium text-slate-700">
+                                  {item.product?.name || 'Producto sin nombre'}
+                                </td>
+                                <td className="px-4 py-3 text-center text-slate-600 font-bold">
+                                  {item.quantity}
+                                </td>
+                                <td className="px-4 py-3 text-right font-black text-slate-900">
+                                  ${Number(item.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900 rounded-[2rem] p-6 text-white flex justify-between items-center shadow-lg shadow-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-blue-500/20 rounded-2xl text-blue-400">
+                        <DollarSign size={24} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Inversión Total Semanal</p>
+                        <p className="text-xs text-blue-400 font-medium">Sumatoria de todos los tickets</p>
+                      </div>
+                    </div>
+                    <span className="text-3xl font-black">
+                      ${Number(selectedSupplier.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-white border-t border-slate-50">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-[0.98]"
+                  >
+                    Cerrar Vista
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
-
     </div>
-
-
   );
 };
 
