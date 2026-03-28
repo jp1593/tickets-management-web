@@ -1,16 +1,131 @@
-# React + Vite
+# 🖥️ Tickets Management Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web para la gestión y visualización de tickets, proveedores, productos y ubicaciones.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Tecnologías
 
-## React Compiler
+* React
+* Vite
+* Axios
+* TailwindCSS
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 📋 Requisitos
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+* Node.js >= 18
+* npm o yarn
+
+---
+
+## ⚙️ Instalación
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/jp1593/tickets-management-web.git
+cd tickets-management-web
+```
+
+### 2. Instalar dependencias
+
+```bash
+npm install
+```
+
+---
+
+## 🔐 Configuración
+
+El frontend se conecta al backend mediante Axios.
+
+Por defecto, la URL base está configurada en:
+
+```js
+http://localhost:3000/api
+```
+
+📌 Asegúrate de que el backend esté corriendo en ese puerto o ajusta la URL en:
+
+```
+src/api/ticketService.js
+```
+
+---
+
+## ▶️ Ejecución del proyecto
+
+```bash
+npm run dev
+```
+
+La aplicación estará disponible en:
+
+```
+http://localhost:5173
+```
+
+---
+
+## 🧩 Funcionalidades principales
+
+### 🎫 Tickets
+
+* Listado de tickets con paginación
+* Búsqueda por:
+
+  * Código
+  * Proveedor
+  * Ubicación
+* Visualización de detalle de ticket
+* Eliminación de tickets
+
+### 📊 Dashboard
+
+* Métricas generales
+* Resumen por semana
+
+### 💳 Pagos
+
+* Resumen de pagos semanales
+
+### ➕ Creación
+
+* Creación de nuevos tickets
+
+---
+
+## 🧠 Flujo de uso
+
+1. Levantar backend (`tickets-management-api`)
+2. Ejecutar frontend
+3. Navegar a la sección de tickets
+4. Visualizar, crear o eliminar tickets
+
+---
+
+## ⚠️ Notas importantes
+
+* El frontend depende completamente del backend para datos.
+* Si el backend no está corriendo, verás errores de red en consola.
+
+---
+
+## Documentación
+
+Existe una carpeta denominada docs, la cual contiene lo siguiente: 
+- Documento pdf con resumen técnico de lo realizado y analisís de datos
+- Vídeo demostrativo del sistema
+- Diagrama entidad/relacion
+
+---
+
+
+## 👨‍💻 Autor
+
+Juan Pablo Estrada Lucero
+
+Proyecto desarrollado como prueba técnica.
+
